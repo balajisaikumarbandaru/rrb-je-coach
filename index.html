@@ -1,0 +1,901 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RRB JE Coach">
+<meta name="theme-color" content="#132238">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%}img{max-width:100%}[hidden]{display:none!important}</style>
+<script src="data.js"></script><script src="localdb.js"></script>
+</head><body>
+<title>RRB JE CBT-1 Coach</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a station-board header over a tabbed workspace; exams take the whole screen in a CBT-style two-pane (question | palette). */
+:root{
+  --bg:#eef2f6; --surface:#ffffff; --surface2:#f6f8fb; --ink:#14202e; --muted:#5a6a7c; --line:#d6dee8;
+  --accent:#1d4f91; --accent-ink:#ffffff; --signal:#d9930f; --board:#132238; --board-ink:#f4f6f9;
+  --ok:#1d8a4f; --bad:#c3372c; --mark:#6a3fb5; --nv:#c9d2dd; --warnbg:#fff5e0;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e141c; --surface:#17202b; --surface2:#1d2734; --ink:#e5ecf4; --muted:#93a3b6; --line:#2b3847;
+  --accent:#6fa2e6; --accent-ink:#0b1320; --signal:#f0b545; --board:#0a1220; --board-ink:#eef2f7;
+  --ok:#3cc47b; --bad:#ee6a5f; --mark:#a98ae9; --nv:#3b4859; --warnbg:#2d2410; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e141c; --surface:#17202b; --surface2:#1d2734; --ink:#e5ecf4; --muted:#93a3b6; --line:#2b3847;
+  --accent:#6fa2e6; --accent-ink:#0b1320; --signal:#f0b545; --board:#0a1220; --board-ink:#eef2f7;
+  --ok:#3cc47b; --bad:#ee6a5f; --mark:#a98ae9; --nv:#3b4859; --warnbg:#2d2410; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+button{font:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+a{color:var(--accent)}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.board{background:var(--board);color:var(--board-ink)}
+.board .wrap{padding-block:22px 0}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--signal)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,5vw,44px);line-height:1;margin:6px 0 8px;letter-spacing:.01em;text-wrap:balance}
+.sub{color:color-mix(in srgb,var(--board-ink) 72%,transparent);max-width:62ch;margin:0 0 18px}
+.pattern{display:flex;flex-wrap:wrap;gap:8px 22px;font-family:var(--f-mono);font-size:12px;padding-block:12px;border-top:1px solid color-mix(in srgb,var(--board-ink) 16%,transparent)}
+.pattern b{color:var(--signal);font-weight:600}
+.tabs{display:flex;gap:2px;overflow-x:auto}
+.tab{background:none;border:0;color:color-mix(in srgb,var(--board-ink) 70%,transparent);font-family:var(--f-display);font-size:19px;font-weight:600;letter-spacing:.03em;padding:10px 16px 12px;border-bottom:3px solid transparent;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--board-ink);border-bottom-color:var(--signal)}
+main.wrap{padding-block:24px 60px;display:grid;gap:22px}
+h2{font-family:var(--f-display);font-size:26px;font-weight:600;margin:0;text-wrap:balance}
+h3{font-family:var(--f-display);font-size:20px;font-weight:600;margin:0}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px}
+.stack{display:grid;gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.spread{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:8px 14px;font-weight:500}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:4px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.high{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 45%,transparent)}
+.chip.medium{color:var(--signal);border-color:color-mix(in srgb,var(--signal) 45%,transparent)}
+.chip.low,.chip.done{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.note{background:var(--warnbg);border:1px solid color-mix(in srgb,var(--signal) 40%,transparent);border-radius:8px;padding:12px 14px}
+
+/* tracker */
+.track{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:760px){.track{grid-template-columns:1fr}}
+.stop{border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--surface);display:grid;gap:6px;align-content:start;position:relative}
+.stop.done{border-color:color-mix(in srgb,var(--ok) 50%,var(--line))}
+.stop .n{font-family:var(--f-display);font-size:30px;font-weight:700;line-height:1}
+.stop .sc{font-family:var(--f-mono);font-size:22px;font-variant-numeric:tabular-nums}
+.rail{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.rail i{display:block;height:100%;background:var(--signal)}
+
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.n,th.n{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.tscroll{overflow-x:auto}
+.bar{display:inline-block;width:80px;height:6px;border-radius:3px;background:var(--line);vertical-align:middle;margin-right:8px;overflow:hidden}
+.bar i{display:block;height:100%}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:grid;gap:10px;align-content:start;min-width:0}
+.card h3{line-height:1.15}
+.empty{border:1px dashed var(--line);border-radius:8px;padding:22px;color:var(--muted);display:grid;gap:6px}
+.empty b{color:var(--ink)}
+code.say{font-family:var(--f-mono);font-size:13px;background:var(--surface2);border:1px solid var(--line);border-radius:4px;padding:1px 6px;color:var(--ink)}
+
+/* module reader */
+.reader{max-width:72ch;display:grid;gap:14px}
+.reader p{margin:0}
+.blk-h{font-family:var(--f-display);font-size:22px;font-weight:600;margin-top:8px}
+.blk-formula{font-family:var(--f-mono);background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:10px 14px;white-space:pre-wrap;overflow-x:auto}
+.blk-trap{border-left:3px solid var(--bad);padding:8px 14px;background:color-mix(in srgb,var(--bad) 7%,var(--surface))}
+.blk-tip{border-left:3px solid var(--ok);padding:8px 14px;background:color-mix(in srgb,var(--ok) 7%,var(--surface))}
+.blk-example{border:1px solid var(--line);border-radius:6px;padding:12px 14px;background:var(--surface)}
+.blk-example ol{margin:6px 0 0;padding-left:20px}
+.label{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.reader ul{margin:0;padding-left:20px}
+
+/* quick check / options */
+.opts{display:grid;gap:8px}
+.opt{display:flex;gap:10px;align-items:flex-start;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:10px 12px;width:100%}
+.opt .k{font-family:var(--f-mono);font-weight:600;color:var(--muted);min-width:1.4em}
+.opt.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--surface))}
+.opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--surface))}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--surface))}
+.qtext{font-size:16px;white-space:pre-wrap}
+
+/* exam */
+.exam{min-height:100%;display:grid;grid-template-rows:auto auto 1fr}
+.xbar{background:var(--board);color:var(--board-ink);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--board)}
+.xbar .wrap{padding-block:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.xtitle{font-family:var(--f-display);font-size:20px;font-weight:600}
+.clock{font-family:var(--f-mono);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;padding:4px 12px;border-radius:6px;background:color-mix(in srgb,var(--board-ink) 10%,transparent)}
+.clock.low{background:var(--bad);color:#fff}
+.secs{background:var(--surface);border-bottom:1px solid var(--line)}
+.secs .wrap{display:flex;gap:4px;overflow-x:auto;padding-block:6px}
+.sec{border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:5px;padding:6px 12px;font-size:13px;white-space:nowrap}
+.sec[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.xbody{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;padding-block:16px 30px;align-items:start}
+@media (max-width:860px){.xbody{grid-template-columns:1fr}}
+.qhead{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:14px}
+.qno{font-family:var(--f-display);font-size:22px;font-weight:600}
+.xactions{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+.btn.save{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.markb{background:var(--mark);border-color:var(--mark);color:#fff}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:12px}
+.legend span{display:flex;align-items:center;gap:6px}
+.pal{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.pq{position:relative;aspect-ratio:1.25;max-width:100%;border:0;border-radius:5px;font-family:var(--f-mono);font-weight:600;font-size:13px;background:var(--nv);color:var(--ink)}
+.pq.na{background:var(--bad);color:#fff;border-radius:5px 5px 12px 12px}
+.pq.an{background:var(--ok);color:#fff;border-radius:12px 12px 5px 5px}
+.pq.mk{background:var(--mark);color:#fff;border-radius:50%}
+.pq.am{background:var(--mark);color:#fff;border-radius:50%}
+.pq.am::after{content:"";position:absolute;right:3px;bottom:3px;width:8px;height:8px;border-radius:50%;background:var(--ok);border:1px solid #fff}
+.pq.cur{outline:3px solid var(--signal);outline-offset:1px}
+.sw{width:18px;height:15px;display:inline-block}
+.overlay{position:fixed;inset:0;background:color-mix(in srgb,#000 55%,transparent);display:grid;place-items:center;z-index:20;padding:16px}
+.dialog{background:var(--surface);border-radius:10px;padding:20px;max-width:520px;width:100%;display:grid;gap:14px;border:1px solid var(--line)}
+
+/* result */
+.scorebig{font-family:var(--f-mono);font-size:44px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.kpis{display:flex;flex-wrap:wrap;gap:22px}
+.kpi .label{margin:0}
+.rev{display:grid;gap:12px}
+.revq{border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--surface);display:grid;gap:10px}
+.expl{background:var(--surface2);border-radius:6px;padding:10px 12px;white-space:pre-wrap}
+@media (prefers-reduced-motion:no-preference){.rail i,.bar i{transition:width .5s ease}}
+
+/* rough work: a paper sheet docked right (landscape) or bottom (portrait); one sheet per question */
+:root{ --paper:#fbfaf4; --paper-grid:rgba(29,79,145,.10); --rough-w:min(620px,56vw) }
+button,.opt,.pq{touch-action:manipulation}
+.exam{-webkit-user-select:none;user-select:none}
+.rough{position:fixed;z-index:15;top:0;right:0;bottom:0;width:var(--rough-w);display:flex;flex-direction:column;background:var(--surface);border-left:1px solid var(--line);box-shadow:-8px 0 24px rgba(0,0,0,.12);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.rough-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line)}
+.rough-bar .btn{padding:7px 12px}
+.rough-bar .btn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.swatch{width:28px;height:28px;border-radius:50%;border:2px solid var(--paper);box-shadow:0 0 0 1px var(--line);padding:0}
+.swatch.on{outline:3px solid var(--signal);outline-offset:1px}
+.rough-pad{flex:1;position:relative;background-color:var(--paper);background-image:linear-gradient(var(--paper-grid) 1px,transparent 1px),linear-gradient(90deg,var(--paper-grid) 1px,transparent 1px);background-size:24px 24px;touch-action:none;overflow:hidden}
+.rough-pad canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+body.rw .xbody{grid-template-columns:1fr;padding-right:calc(var(--rough-w) + 16px)}
+body.rw .xbar .wrap,body.rw .secs .wrap{padding-right:calc(var(--rough-w) + 16px)}
+@media (orientation:portrait),(max-width:760px){
+  .rough{left:0;width:auto;top:auto;height:56vh;border-left:0;border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(0,0,0,.12);padding-left:env(safe-area-inset-left,0px)}
+  body.rw .xbody,body.rw .xbar .wrap,body.rw .secs .wrap{padding-right:max(16px,env(safe-area-inset-right,0px))}
+  body.rw .xbody{padding-bottom:58vh}
+}
+@media (pointer:coarse){ .pq{min-height:40px} .opt{padding:14px} }
+</style>
+
+<div id="app"></div>
+
+<script>
+const SECTIONS = ["Mathematics","General Intelligence & Reasoning","General Awareness","General Science"];
+const S = { db:null, ready:false, noDb:false, tests:[], modules:[], diags:[], attempts:[], profile:null, progress:{done:{}},
+  tab:'plan', view:'home', exam:null, attemptView:null, moduleId:null, revFilter:'wrong', openDiag:null, qc:{}, confirm:false, saveErr:null,
+  cardDocs:[], cardProg:{}, mem:{ filter:'all', attention:false, cur:null, flipped:false, cram:false, lastId:null, done:0 } };
+
+/* ---------- helpers ---------- */
+function h(tag, props, ...kids){
+  const el = document.createElement(tag);
+  if (props) for (const [k,v] of Object.entries(props)){
+    if (v==null || v===false) continue;
+    if (k==='class') el.className = v;
+    else if (k==='style') el.style.cssText = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v===true ? '' : v);
+  }
+  for (const c of kids.flat(Infinity)){ if (c==null || c===false) continue; el.append(c.nodeType ? c : document.createTextNode(String(c))); }
+  return el;
+}
+const lsGet = k => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } };
+const lsSet = (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const lsDel = k => { try { localStorage.removeItem(k); } catch {} };
+const pct = (a,b) => b ? Math.round(a*100/b) : 0;
+const fmt2 = x => (Math.round(x*100)/100).toFixed(2);
+const mmss = ms => { const s = Math.max(0, Math.round(ms/1000)); const hh = Math.floor(s/3600), m = Math.floor(s%3600/60), ss = s%60;
+  return (hh ? hh+':'+String(m).padStart(2,'0') : String(m).padStart(2,'0')) + ':' + String(ss).padStart(2,'0'); };
+const dateStr = t => t ? new Date(t).toLocaleDateString(undefined,{day:'numeric',month:'short'}) : '';
+const accColor = a => a >= 75 ? 'var(--ok)' : a >= 50 ? 'var(--signal)' : 'var(--bad)';
+const L = 'ABCD';
+
+/* ---------- data ---------- */
+async function boot(){
+  render();
+  const db = window.claude ? await window.claude.use('db') : null;
+  if (!db){ S.noDb = true; render(); return; }
+  S.db = db;
+  const sub = (col, key, sort) => db.collection(col).onSnapshot(s => {
+    S[key] = s.docs.map(d => ({ id:d.id, ...d.data() })).sort(sort || (()=>0));
+    S.ready = true; if (S.view !== 'exam') render();
+  }, () => {});
+  sub('tests','tests',(a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  sub('modules','modules',(a,b)=>(a.order??99)-(b.order??99));
+  sub('diagnostics','diags',(a,b)=>(a.mock||0)-(b.mock||0));
+  sub('attempts','attempts',(a,b)=>(b.submittedAt||0)-(a.submittedAt||0));
+  sub('cards','cardDocs',(a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  db.doc('progress/cards').get().then(d => { S.cardProg = d.exists ? (d.data().cards || {}) : {}; S.mem.cur = null; if (S.view!=='exam') render(); }, () => {});
+  db.doc('profile/weakness').onSnapshot(d => { S.profile = d.exists ? d.data() : null; if (S.view!=='exam') render(); }, () => {});
+  db.doc('progress/modules').onSnapshot(d => { S.progress = d.exists ? d.data() : {done:{}}; if (S.view!=='exam') render(); }, () => {});
+}
+
+/* ---------- shell ---------- */
+function render(){
+  const app = document.getElementById('app');
+  app.replaceChildren(S.view === 'exam' ? examView() : S.view === 'instr' ? shell(instrView()) : S.view === 'result' ? shell(resultView()) : S.view === 'module' ? shell(moduleView()) : shell(homeView()));
+  if (S.view === 'exam'){ tickClock(); roughSync(); } else if (RW.open) toggleRough(false);
+}
+
+/* ---------- rough work (Apple Pencil, finger or mouse) ----------
+   Strokes are stored per question as points normalised to the sheet width, so a rotated iPad redraws them in place. */
+const RW = { open:false, tool:'pen', color:'#1b2a41', pencilOnly:true, sawPen:false, sheets:{}, testId:null, qid:null, el:null, cv:null, ctx:null, cur:null, dpr:1 };
+const INKS = ['#1b2a41','#1d4f91','#c3372c'];
+let rwSaveT = null;
+function roughSaveSoon(){ clearTimeout(rwSaveT); rwSaveT = setTimeout(() => { if (RW.testId) lsSet('rough:'+RW.testId, RW.sheets); }, 700); }
+function roughBuild(){
+  if (RW.el) return;
+  const tool = (k, label) => h('button',{class:'btn','data-tool':k,onclick:()=>{ RW.tool = k; roughBar(); }}, label);
+  RW.el = h('aside',{class:'rough',hidden:true,'aria-label':'Rough work sheet'},
+    h('div',{class:'rough-bar'},
+      h('b',{id:'rough-title',style:'font-family:var(--f-display);font-size:18px'},'Rough work'),
+      h('div',{class:'row'},
+        tool('pen','Pen'), tool('erase','Eraser'),
+        INKS.map(c => h('button',{class:'swatch','data-ink':c,style:`background:${c}`,'aria-label':'Ink colour',onclick:()=>{ RW.color = c; RW.tool = 'pen'; roughBar(); }})),
+        h('button',{class:'btn',onclick:roughUndo},'Undo'),
+        h('button',{class:'btn',onclick:roughClear},'Clear'),
+        h('button',{class:'btn primary',onclick:()=>toggleRough(false)},'Close')),
+      h('label',{class:'row small muted',style:'width:100%;cursor:pointer'},
+        h('input',{type:'checkbox',id:'rw-pencil',checked:true,onchange:e=>{ RW.pencilOnly = e.target.checked; }}),
+        'Palm rejection: once the Apple Pencil is used, ignore finger touches')),
+    h('div',{class:'rough-pad'}, h('canvas',{id:'rough-cv'})));
+  document.body.append(RW.el);
+  RW.cv = RW.el.querySelector('canvas'); RW.ctx = RW.cv.getContext('2d');
+  new ResizeObserver(roughResize).observe(RW.cv.parentElement);
+  const cv = RW.cv;
+  cv.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'pen') RW.sawPen = true;
+    if (RW.pencilOnly && RW.sawPen && e.pointerType === 'touch') return;
+    e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch {}
+    RW.cur = { id:e.pointerId, s:{ t:RW.tool, c:RW.color, p:[] } };
+    roughPoint(e);
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!RW.cur || RW.cur.id !== e.pointerId) return;
+    e.preventDefault();
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+    for (const ev of (evs.length ? evs : [e])) roughPoint(ev);
+  });
+  const end = e => {
+    if (!RW.cur || RW.cur.id !== e.pointerId) return;
+    const s = RW.cur.s; RW.cur = null;
+    if (s.p.length){ (RW.sheets[RW.qid] ||= []).push(s); roughSaveSoon(); }
+  };
+  cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+  ['touchstart','touchmove'].forEach(t => cv.addEventListener(t, e => e.preventDefault(), { passive:false }));   // stop iOS scroll/zoom while writing
+}
+function roughPoint(e){
+  const r = RW.cv.getBoundingClientRect(), W = r.width || 1;
+  const pr = e.pointerType === 'pen' ? (e.pressure || 0.5) : 0.5;
+  const pt = [ +((e.clientX - r.left) / W).toFixed(4), +((e.clientY - r.top) / W).toFixed(4), +pr.toFixed(2) ];
+  const s = RW.cur.s; s.p.push(pt);
+  roughSeg(s, s.p.length - 1, W);
+}
+function roughWidth(s, p){ return s.t === 'erase' ? 26 : 1.2 + 2.6 * p; }
+function roughSeg(s, i, W){
+  const ctx = RW.ctx, a = s.p[Math.max(0, i - 1)], b = s.p[i];
+  ctx.globalCompositeOperation = s.t === 'erase' ? 'destination-out' : 'source-over';
+  ctx.strokeStyle = s.c; ctx.fillStyle = s.c; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.lineWidth = roughWidth(s, b[2]);
+  ctx.beginPath(); ctx.moveTo(a[0]*W, a[1]*W); ctx.lineTo(b[0]*W + (i ? 0 : 0.01), b[1]*W); ctx.stroke();
+}
+function roughRedraw(){
+  if (!RW.ctx) return;
+  const W = RW.cv.getBoundingClientRect().width || 1;
+  RW.ctx.setTransform(RW.dpr, 0, 0, RW.dpr, 0, 0);
+  RW.ctx.clearRect(0, 0, RW.cv.width, RW.cv.height);
+  for (const s of (RW.sheets[RW.qid] || [])) for (let i = 0; i < s.p.length; i++) roughSeg(s, i, W);
+  RW.ctx.globalCompositeOperation = 'source-over';
+}
+function roughResize(){
+  const r = RW.cv.getBoundingClientRect(); RW.dpr = window.devicePixelRatio || 1;
+  if (!r.width || !r.height) return;
+  RW.cv.width = Math.round(r.width * RW.dpr); RW.cv.height = Math.round(r.height * RW.dpr);
+  roughRedraw();
+}
+function roughBar(){
+  if (!RW.el) return;
+  RW.el.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === RW.tool));
+  RW.el.querySelectorAll('[data-ink]').forEach(b => b.classList.toggle('on', RW.tool === 'pen' && b.dataset.ink === RW.color));
+}
+function roughUndo(){ (RW.sheets[RW.qid] || []).pop(); roughRedraw(); roughSaveSoon(); }
+function roughClear(){ RW.sheets[RW.qid] = []; roughRedraw(); roughSaveSoon(); }
+function roughSync(){
+  if (!S.exam) return;
+  const { test, st } = S.exam, qid = test.questions[st.cur].id;
+  if (RW.testId !== test.id){ RW.testId = test.id; RW.sheets = lsGet('rough:'+test.id) || {}; }
+  if (RW.qid !== qid){ RW.qid = qid; roughRedraw(); }
+  if (RW.el){ const t = RW.el.querySelector('#rough-title'); if (t) t.textContent = `Rough work · Q${test.questions[st.cur].n || st.cur + 1}`; }
+}
+function toggleRough(open){
+  RW.open = open;
+  if (open){ roughBuild(); RW.el.hidden = false; document.body.classList.add('rw'); roughBar(); roughResize(); RW.qid = null; roughSync(); requestAnimationFrame(roughResize); }
+  else if (RW.el) RW.el.hidden = true;
+  document.body.classList.toggle('rw', open);
+  if (S.view === 'exam'){ const b = document.querySelector('.xbar [aria-pressed]'); if (b){ b.classList.toggle('primary', open); b.setAttribute('aria-pressed', String(open)); } }
+}
+function shell(content){
+  const tabs = [['plan','Diagnosis'],['practice','Practice'],['learn','Learn'],['memorise','Memorise'],['history','History']];
+  return h('div',null,
+    h('header',{class:'board'}, h('div',{class:'wrap'},
+      h('div',{class:'eyebrow'},'RRB Junior Engineer · CBT-1 · Civil'),
+      h('h1',null,'CBT-1 Coach'),
+      h('p',{class:'sub'},'Five full-length mocks, taken right here, find your weak topics. Every drill and learning module after that is written for those topics.'),
+      h('div',{class:'pattern'},
+        h('span',null,h('b',null,'100'),' questions'), h('span',null,h('b',null,'90'),' min'),
+        h('span',null,'+1 / ',h('b',null,'−⅓')), h('span',null,'Maths 30 · Reasoning 25 · GA 15 · Science 30')),
+      h('nav',{class:'tabs',role:'tablist'}, tabs.map(([k,t]) => h('button',{class:'tab',role:'tab','aria-selected':String(S.view==='home' && S.tab===k),
+        onclick:()=>{ S.view='home'; S.tab=k; render(); window.scrollTo(0,0); }}, t))))),
+    h('main',{class:'wrap'}, content));
+}
+
+/* ---------- home ---------- */
+function homeView(){
+  if (S.noDb) return h('div',{class:'note'},'Open this page on claude.ai while signed in. It saves your scores and loads your drills from its own storage, which is not available in this view.');
+  if (S.tab==='plan') return planTab();
+  if (S.tab==='practice') return practiceTab();
+  if (S.tab==='learn') return learnTab();
+  if (S.tab==='memorise') return memoriseTab();
+  return historyTab();
+}
+
+/* ---------- memorise (flashcards, Leitner boxes) ---------- */
+const PRI = {high:0, medium:1, low:2};
+const BOX_MIN = [0, 0.5, 10, 60, 24*60, 3*24*60];   // minutes until a card in box n is due again
+function topicPriority(){
+  const st = topicStats(), prof = S.profile?.topics || [], m = {};
+  for (const k of new Set([...prof.map(t=>t.topic), ...Object.keys(st.mock), ...Object.keys(st.drill)])){
+    const p = prof.find(t=>t.topic===k);
+    m[k] = p?.priority || autoPriority(st.mock[k]) || autoPriority(st.drill[k]) || null;
+  }
+  return m;
+}
+const allCards = () => S.cardDocs.flatMap(d => d.cards || []);
+function memPool(pr){
+  const f = S.mem.filter;
+  return allCards().filter(c => f==='all' || c.section===f).filter(c => !S.mem.attention || pr[c.topic]==='high')
+    .map(c => ({ c, st: S.cardProg[c.id] || null, pr: PRI[pr[c.topic]] ?? 3 }));
+}
+function nextCard(pr){
+  const now = Date.now();
+  const pool = memPool(pr).filter(x => S.mem.cram || !x.st || x.st.due <= now);
+  pool.sort((a,b) => S.mem.cram ? ((a.st?.box||0)-(b.st?.box||0) || a.pr-b.pr) : (a.pr-b.pr || (a.st?.box||0)-(b.st?.box||0) || (a.st?.due||0)-(b.st?.due||0)));
+  return pool.find(x => x.c.id !== S.mem.lastId) || pool[0] || null;
+}
+let progSaving = Promise.resolve();
+function answerCard(got){
+  const id = S.mem.cur.c.id, st = S.cardProg[id] || { box:0, seen:0, lapses:0 };
+  const box = got ? Math.min(5, Math.max(2, st.box + 1)) : 1;
+  S.cardProg = { ...S.cardProg, [id]: { box, seen: st.seen + 1, lapses: st.lapses + (got ? 0 : 1), due: Date.now() + BOX_MIN[box]*60000, last: Date.now() } };
+  Object.assign(S.mem, { lastId:id, cur:null, flipped:false, done: S.mem.done + 1 });
+  render();
+  const snapshot = S.cardProg;
+  progSaving = progSaving.then(() => S.db.doc('progress/cards').set({ cards: snapshot })).catch(() => {});
+}
+function memSet(patch){ Object.assign(S.mem, patch, { cur:null, flipped:false }); render(); }
+document.addEventListener('keydown', e => {
+  if (S.view!=='home' || S.tab!=='memorise' || !S.mem.cur || e.target.closest?.('input,textarea')) return;
+  if (e.key===' ' && !S.mem.flipped){ e.preventDefault(); S.mem.flipped = true; render(); }
+  else if (S.mem.flipped && e.key==='1') answerCard(false);
+  else if (S.mem.flipped && e.key==='2') answerCard(true);
+});
+function memoriseTab(){
+  const cards = allCards();
+  if (!cards.length) return h('div',{class:'empty'}, h('b',null, S.ready ? 'No flashcards yet.' : 'Loading cards…'), h('span',null,'Cards for every trick and fact you need to remember will appear here.'));
+  const pr = topicPriority(), now = Date.now(), pool = memPool(pr);
+  const due = pool.filter(x => !x.st || x.st.due <= now).length;
+  const learned = pool.filter(x => (x.st?.box||0) >= 3).length;
+  if (!S.mem.cur) S.mem.cur = nextCard(pr);
+  const cur = S.mem.cur, cp = cur && pr[cur.c.topic];
+  const filters = [['all','All'],['Mathematics','Maths'],['General Intelligence & Reasoning','Reasoning'],['General Science','Science'],['General Awareness','GA']];
+  const byTopic = {};
+  for (const x of memPool(pr)){ const t = byTopic[x.c.topic] ||= { topic:x.c.topic, section:x.c.section, pr:x.pr, n:0, known:0, lapses:0 }; t.n++; if ((x.st?.box||0)>=3) t.known++; t.lapses += x.st?.lapses||0; }
+  const topics = Object.values(byTopic).sort((a,b) => a.pr-b.pr || (a.known/a.n)-(b.known/b.n));
+  return h('div',{class:'stack',style:'gap:18px'},
+    h('div',{class:'spread'}, h('h2',null,'Memorise'), h('span',{class:'num muted'}, `${due} due · ${learned} of ${pool.length} learned · ${S.mem.done} reviewed today`)),
+    h('p',{class:'muted small',style:'margin:0;max-width:70ch'},'Cards from your weakest topics come first. Say the answer out loud before you turn the card. "Missed it" brings the card back in 30 seconds; each "Got it" spaces it further out: 10 minutes, 1 hour, 1 day, 3 days.'),
+    h('div',{class:'row'},
+      filters.map(([k,t]) => h('button',{class:'btn'+(S.mem.filter===k?' primary':''),onclick:()=>memSet({filter:k})},t)),
+      h('label',{class:'row small',style:'cursor:pointer;margin-left:6px'}, h('input',{type:'checkbox',id:'mem-attn',checked:S.mem.attention||null,onchange:e=>memSet({attention:e.target.checked})}), 'High-priority topics only')),
+    h('div',{class:'rail'}, h('i',{style:`width:${pool.length ? Math.round(learned*100/pool.length) : 0}%`})),
+    cur ? h('section',{class:'panel stack',style:'min-height:220px;align-content:start'},
+        h('div',{class:'spread'}, h('div',{class:'row'}, h('span',{class:'chip'}, short(cur.c.section)), h('span',{class:'chip'}, cur.c.topic)),
+          h('div',{class:'row'}, cp ? h('span',{class:'chip '+cp}, cp) : null, h('span',{class:'num muted small'}, cur.st ? `box ${cur.st.box} · missed ${cur.st.lapses}×` : 'new'))),
+        h('div',{class:'qtext',style:'font-size:20px;font-family:var(--f-display);font-weight:600;line-height:1.3'}, cur.c.front),
+        S.mem.flipped
+          ? [ h('div',{class:'blk-tip',style:'font-size:16px;white-space:pre-wrap'}, cur.c.back),
+              h('div',{class:'row'},
+                h('button',{class:'btn',style:'border-color:var(--bad);color:var(--bad)',onclick:()=>answerCard(false)},'Missed it  (1)'),
+                h('button',{class:'btn save',onclick:()=>answerCard(true)},'Got it  (2)')) ]
+          : h('div',null, h('button',{class:'btn primary',onclick:()=>{ S.mem.flipped = true; render(); }},'Show answer  (Space)')))
+      : h('div',{class:'empty'}, h('b',null, pool.length ? 'Nothing due right now.' : 'No cards match this filter.'),
+          pool.length ? h('div',{class:'row'}, h('span',null,'Cards you got right come back later.'), h('button',{class:'btn',onclick:()=>memSet({cram:true})},'Practise all of them again')) : null),
+    S.mem.cram ? h('p',{class:'small muted',style:'margin:0'}, 'Practising every card, weakest first. ', h('a',{href:'#',onclick:e=>{ e.preventDefault(); memSet({cram:false}); }},'Back to due cards only')) : null,
+    h('section',{class:'stack'}, h('h3',null,'Topics needing attention'),
+      h('div',{class:'panel tscroll',style:'padding:6px 8px'}, h('table',null,
+        h('thead',null,h('tr',null,h('th',null,'Topic'),h('th',null,'Priority'),h('th',{class:'n'},'Learned'),h('th',{class:'n'},'Missed'))),
+        h('tbody',null, topics.map(t => h('tr',null,
+          h('td',null,h('div',null,t.topic),h('div',{class:'muted small'},short(t.section))),
+          h('td',null, t.pr<3 ? h('span',{class:'chip '+['high','medium','low'][t.pr]}, ['high','medium','low'][t.pr]) : h('span',{class:'muted'},'—')),
+          h('td',{class:'n'}, `${t.known}/${t.n}`), h('td',{class:'n'}, t.lapses))))))));
+}
+
+const mockTest = n => S.tests.find(t => t.diagnostic === n);
+const firstAttempt = t => t ? S.attempts.filter(a => a.testId===t.id).sort((a,b)=>a.submittedAt-b.submittedAt)[0] : null;
+function planTab(){
+  const byMock = Object.fromEntries(S.diags.map(d => [d.mock, d]));
+  const taken = [1,2,3,4,5].filter(n => firstAttempt(mockTest(n))).length;
+  const stops = [1,2,3,4,5].map(n => {
+    const t = mockTest(n), a = firstAttempt(t), d = byMock[n], inprog = t && lsGet('cbt:'+t.id);
+    return h('div',{class:'stop'+(a?' done':'')},
+      h('div',{class:'spread'}, h('span',{class:'n'},'Mock ',n),
+        a ? h('span',{class:'chip done'}, d ? 'Analysed' : 'Taken') : inprog ? h('span',{class:'chip medium'},'In progress') : h('span',{class:'chip'},'Not taken')),
+      !t ? h('div',{class:'muted small'}, S.ready ? 'Not loaded yet.' : 'Loading…')
+      : a ? [ h('div',{class:'sc'}, fmt2(a.score),h('span',{class:'muted small'},` / ${a.total}`)),
+              h('div',{class:'muted small'}, `${a.correct} right · ${a.wrong} wrong · ${a.skipped} left · ${dateStr(a.submittedAt)}`),
+              h('div',{class:'row'},
+                h('button',{class:'btn ghost',onclick:()=>openAttempt(a)},'Review'),
+                d ? h('button',{class:'btn ghost',onclick:()=>{ S.openDiag = S.openDiag===n?null:n; render(); }}, S.openDiag===n?'Hide notes':'Coach notes') : null) ]
+      : [ h('div',{class:'muted small'},'100 questions · 90 minutes'),
+          h('button',{class:'btn primary',onclick:()=>startExam(t)}, inprog ? 'Resume' : 'Start') ]);
+  });
+  const open = S.openDiag && byMock[S.openDiag];
+  return h('div',{class:'stack',style:'gap:22px'},
+    h('section',{class:'stack'},
+      h('div',{class:'spread'}, h('h2',null,'Diagnostic mocks'), h('span',{class:'num muted'}, `${taken} of 5 taken`)),
+      h('div',{class:'rail'}, h('i',{style:`width:${taken*20}%`})),
+      h('div',{class:'track'}, stops),
+      open ? diagMistakes(open) : null),
+    weaknessBoard(),
+    h('section',{class:'panel stack'},
+      h('h3',null,'How this works'),
+      h('ol',{class:'small',style:'margin:0;padding-left:20px;display:grid;gap:4px'},
+        h('li',null,'Take Mocks 1 to 5 here, each in one 90-minute sitting. Only your first attempt at each mock counts towards your diagnosis.'),
+        h('li',null,'Your score, mistakes and time on each topic are saved the moment you submit. The weakness board updates on its own.'),
+        h('li',null,'Then tell Claude ', h('code',{class:'say'},'analyse mock N'),'. Claude reads your attempt, adds coach notes, and writes learning modules and targeted drills for your weak topics.'),
+        h('li',null,'Drills under Practice use the same timer, palette and −⅓ marking as the real CBT. Their results feed the board too.'))));
+}
+
+function diagMistakes(d){
+  const ms = d.mistakes || [];
+  return h('div',{class:'panel stack'},
+    h('div',{class:'spread'}, h('h3',null,`Mock ${d.mock}: coach notes`),
+      h('div',{class:'row small muted'}, (d.sections||[]).map(s => h('span',null, `${short(s.name)} ${s.correct}/${s.total}`)))),
+    d.summary ? h('p',{style:'margin:0;max-width:75ch'}, d.summary) : null,
+    ms.length ? h('div',{class:'tscroll'}, h('table',null,
+      h('thead',null,h('tr',null,h('th',null,'Topic'),h('th',null,'Question'),h('th',null,'You'),h('th',null,'Correct'),h('th',null,'Why it went wrong'))),
+      h('tbody',null, ms.map(m => h('tr',null, h('td',null,h('div',null,m.topic),h('div',{class:'muted small'},short(m.section))),
+        h('td',{style:'min-width:220px'},m.q), h('td',{style:'color:var(--bad)'},m.yours||'—'), h('td',{style:'color:var(--ok)'},m.correct), h('td',{class:'small',style:'min-width:200px'},m.why||''))))))
+      : null);
+}
+const short = s => ({"Mathematics":"Maths","General Intelligence & Reasoning":"Reasoning","General Awareness":"GA","General Science":"Science"})[s] || s || '';
+
+/* Topic stats from saved attempts. Mocks count only the first attempt at each mock; drills count every attempt. */
+function topicStats(){
+  const fullTests = S.tests.filter(t=>t.diagnostic || isPyq(t));
+  const diagIds = new Set(fullTests.map(t=>t.id));
+  const firstIds = new Set(fullTests.map(firstAttempt).filter(Boolean).map(a=>a.id));
+  const out = { mock:{}, drill:{} };
+  for (const a of S.attempts){
+    const isMock = diagIds.has(a.testId);
+    if (isMock && !firstIds.has(a.id)) continue;
+    const bucket = isMock ? out.mock : out.drill;
+    for (const r of (a.responses||[])){
+      const k = r.topic; if (!k) continue;
+      const t = bucket[k] ||= { topic:k, section:r.section, n:0, right:0, wrong:0, ms:0 };
+      t.n++; t.ms += r.ms||0;
+      if (r.chosen==null) {} else if (r.chosen===r.correct) t.right++; else t.wrong++;
+    }
+  }
+  return out;
+}
+/* Priority uses marks earned per question seen (a skip earns nothing), but only once the topic has answered questions. */
+const autoPriority = s => !s || s.n < 2 || !(s.right + s.wrong) ? null : pct(s.right, s.n) < 50 ? 'high' : pct(s.right, s.n) < 75 ? 'medium' : 'low';
+function accCell(s){
+  if (!s) return '—';
+  const a = pct(s.right, s.n), skip = s.n - s.right - s.wrong;
+  if (!(s.right + s.wrong)) return h('span',{class:'muted small'},`all ${s.n} skipped`);
+  return [h('span',{class:'bar'},h('i',{style:`width:${a}%;background:${accColor(a)}`})), `${s.right}/${s.n} `,
+    h('span',{class:'muted small'}, skip ? `(${skip} skipped)` : '')];
+}
+function weaknessBoard(){
+  const st = topicStats();
+  const prof = S.profile?.topics || [];
+  const keys = new Set([...prof.map(t=>t.topic), ...Object.keys(st.mock), ...Object.keys(st.drill)]);
+  const prio = {high:0,medium:1,low:2};
+  const rows = [...keys].map(k => {
+    const p = prof.find(t=>t.topic===k), m = st.mock[k], d = st.drill[k];
+    const priority = p?.priority || autoPriority(m) || autoPriority(d);
+    const acc = m ? pct(m.right,m.n) : d ? pct(d.right,d.n) : 101;
+    const both = [m,d].filter(Boolean); const n = both.reduce((x,s)=>x+s.n,0);
+    return { topic:k, section:p?.section || m?.section || d?.section, p, m, d, priority, acc, avg: n ? both.reduce((x,s)=>x+s.ms,0)/n : null };
+  }).sort((a,b) => (prio[a.priority]??3)-(prio[b.priority]??3) || a.acc-b.acc);
+  const nMocks = [1,2,3,4,5].filter(n => firstAttempt(mockTest(n))).length;
+  return h('section',{class:'stack'},
+    h('div',{class:'spread'}, h('h2',null,'Weakness board'),
+      h('span',{class:'muted small'}, `${nMocks} mock${nMocks===1?'':'s'} taken` + (S.profile?.updatedAt ? ` · coach notes ${dateStr(S.profile.updatedAt)}` : ''))),
+    S.profile?.summary ? h('p',{style:'margin:0;max-width:75ch'}, S.profile.summary) : null,
+    rows.length ? h('div',{class:'panel tscroll',style:'padding:6px 8px'}, h('table',null,
+      h('thead',null,h('tr',null,h('th',null,'Topic'),h('th',null,'Priority'),h('th',null,'Mocks'),h('th',null,'Drills'),h('th',{class:'n'},'Avg time'),h('th',null,'Note'))),
+      h('tbody',null, rows.map(r => h('tr',null,
+          h('td',null,h('div',null,r.topic),h('div',{class:'muted small'},short(r.section))),
+          h('td',null, r.priority ? h('span',{class:'chip '+r.priority}, r.priority) : h('span',{class:'muted'},'—')),
+          h('td',{class:'num',style:'white-space:nowrap'}, accCell(r.m)),
+          h('td',{class:'num',style:'white-space:nowrap'}, accCell(r.d)),
+          h('td',{class:'n'}, r.avg!=null ? Math.round(r.avg/1000)+'s' : '—'),
+          h('td',{class:'small muted',style:'min-width:180px'}, r.p?.note || ''))))))
+    : h('div',{class:'empty'}, h('b',null,'No weak topics yet.'), h('span',null,'Take Mock 1. Every topic you lose marks in will be listed here with its accuracy, average time and priority.')));
+}
+
+function practiceTab(){
+  const tests = S.tests.filter(t => !t.diagnostic && !isPyq(t));
+  const pyqs = S.tests.filter(isPyq).sort((a,b) => (a.paperDate||'').localeCompare(b.paperDate||''));
+  const ip = tests.filter(t => lsGet('cbt:'+t.id));
+  return h('div',{class:'stack',style:'gap:16px'},
+    pyqs.length ? h('section',{class:'stack'},
+      h('div',{class:'spread'}, h('h2',null,'Previous papers'), h('span',{class:'muted small'},'Official RRB JE CBT-1 papers, 2019. Read each paper, answer here.')),
+      h('p',{class:'small muted',style:'margin:0;max-width:75ch'}, 'Open the matching file from the "RRB JE CBT-1 papers" folder on your computer. Those copies have the answer keys blacked out. Questions are mixed across sections in the order RRB set them. Your first attempt at each paper feeds the weakness board.'),
+      h('div',{class:'cards'}, pyqs.map(testCard))) : null,
+    h('div',{class:'spread'}, h('h2',null,'Timed tests'), h('span',{class:'muted small'},'Answers count only after Save & Next, as in the real CBT.')),
+    tests.length ? h('div',{class:'cards'}, tests.map(testCard))
+      : h('div',{class:'empty'}, h('b',null, S.ready ? 'No drills yet.' : 'Loading drills…'), h('span',null,'Targeted drills are written after your mocks are analysed. Each one runs on the CBT timer with −⅓ negative marking.')),
+    ip.length ? h('p',{class:'small muted'},'A test in progress keeps its timer running while you are away.') : null);
+}
+function testCard(t){
+  const tries = S.attempts.filter(a => a.testId===t.id);
+  const best = tries.length ? Math.max(...tries.map(a=>a.score)) : null;
+  const inprog = lsGet('cbt:'+t.id);
+  const secCounts = {}; (t.questions||[]).forEach(q => secCounts[q.section]=(secCounts[q.section]||0)+1);
+  return h('article',{class:'card'},
+    h('div',{class:'spread'}, h('span',{class:'chip'+(t.kind==='full'||isPyq(t)?' medium':'')}, isPyq(t)?'Previous paper':t.kind==='full'?'Full mock':t.kind==='warmup'?'Warm-up':'Targeted drill'),
+      h('span',{class:'num muted small'}, `${t.questions?.length||0} Q · ${t.durationMin} min`)),
+    h('h3',null,t.title),
+    t.blurb ? h('p',{class:'small muted',style:'margin:0'},t.blurb) : null,
+    isPyq(t) && t.paperFile ? h('div',{class:'small'}, 'Paper: ', h('code',{class:'say'}, t.paperFile)) : null,
+    h('div',{class:'small muted'}, Object.entries(secCounts).map(([s,c])=>`${short(s)} ${c}`).join(' · ')),
+    h('div',{class:'spread'},
+      h('span',{class:'small num'}, best!=null ? `Best ${fmt2(best)} / ${t.questions.length} · ${tries.length} attempt${tries.length>1?'s':''}` : 'Not attempted'),
+      h('button',{class:'btn primary',onclick:()=>startExam(t)}, inprog ? 'Resume' : tries.length ? 'Retake' : 'Start')));
+}
+
+function learnTab(){
+  const done = S.progress?.done || {};
+  const n = S.modules.filter(m=>done[m.id]).length;
+  return h('div',{class:'stack',style:'gap:16px'},
+    h('div',{class:'spread'}, h('h2',null,'Learning modules'), S.modules.length ? h('span',{class:'num muted'},`${n} of ${S.modules.length} done`) : null),
+    S.modules.length ? h('div',{class:'cards'}, S.modules.map(m => h('article',{class:'card'},
+      h('div',{class:'spread'}, h('span',{class:'chip '+(m.priority||'')}, short(m.section)), done[m.id] ? h('span',{class:'chip done'},'Done') : h('span',{class:'num muted small'},`${m.minutes||10} min`)),
+      h('h3',null,m.title),
+      m.why ? h('p',{class:'small muted',style:'margin:0'}, m.why) : null,
+      h('div',null,h('button',{class:'btn primary',onclick:()=>{ S.moduleId=m.id; S.qc={}; S.view='module'; render(); window.scrollTo(0,0); }}, done[m.id]?'Review':'Study')))))
+      : h('div',{class:'empty'}, h('b',null,'Modules are written from your mistakes.'), h('span',null,'After each analysed mock, every topic you got wrong gets a module: the core idea, the formulas, a worked example, the trap you fell into, and a quick check.')));
+}
+
+/* ---------- moving results between the iPad app and the online coach ---------- */
+const attemptKey = a => `${a.testId}|${a.startedAt}`;
+async function exportResults(){
+  const data = { app:'rrbje-coach', version:1, exportedAt:Date.now(), attempts:S.attempts, cardProg:S.cardProg, progress:S.progress };
+  const name = `rrbje-results-${new Date().toISOString().slice(0,10)}.json`;
+  const file = new File([JSON.stringify(data)], name, { type:'application/json' });
+  try {
+    if (navigator.canShare?.({ files:[file] })){ await navigator.share({ files:[file], title:'RRB JE results' }); S.syncMsg = 'Shared. Save it to Files or AirDrop it, then import it in the online coach.'; }
+    else { const a = h('a',{href:URL.createObjectURL(file),download:name}); document.body.append(a); a.click(); a.remove(); S.syncMsg = `Saved ${name}.`; }
+  } catch (e){ S.syncMsg = e?.name === 'AbortError' ? null : 'Could not share the file. Try again.'; }
+  render();
+}
+async function importResults(file){
+  try {
+    const data = JSON.parse(await file.text());
+    if (data.app !== 'rrbje-coach') throw new Error('not ours');
+    const have = new Set(S.attempts.map(attemptKey)); let n = 0;
+    for (const a of data.attempts || []){
+      if (have.has(attemptKey(a))) continue;
+      const { id, ...rest } = a; await S.db.collection('attempts').add({ ...rest, importedFrom:'ipad' }); n++;
+    }
+    const merged = { ...S.cardProg };
+    for (const [k, v] of Object.entries(data.cardProg || {})) if (!merged[k] || (v.last||0) > (merged[k].last||0)) merged[k] = v;
+    S.cardProg = merged; await S.db.doc('progress/cards').set({ cards: merged });
+    const done = { ...(S.progress?.done||{}), ...(data.progress?.done||{}) };
+    S.progress = { done }; await S.db.doc('progress/modules').set({ done });
+    S.syncMsg = n ? `Imported ${n} new attempt${n>1?'s':''} from the iPad. Tell Claude to analyse them.` : 'Nothing new in that file: every attempt is already here.';
+  } catch { S.syncMsg = 'That file is not an RRB JE Coach results file.'; }
+  render();
+}
+function syncPanel(){
+  const ipad = !!window.__standalone;
+  return h('section',{class:'panel stack'},
+    h('h3',null, ipad ? 'Send results to the online coach' : 'Results from the iPad app'),
+    h('p',{class:'small muted',style:'margin:0;max-width:70ch'}, ipad
+      ? 'This app works offline and keeps everything on this iPad. After a test, export your results, then import the file in the online coach so Claude can analyse it.'
+      : 'Took tests in the offline iPad app? Export the results file there, then import it here. Attempts already in the coach are skipped.'),
+    h('div',{class:'row'}, ipad
+      ? h('button',{class:'btn primary',onclick:exportResults},'Export results file')
+      : h('label',{class:'btn primary',style:'cursor:pointer'}, 'Import results file', h('input',{type:'file',id:'import-file',accept:'application/json,.json',hidden:true,onchange:e=>{ const f = e.target.files[0]; if (f) importResults(f); e.target.value=''; }}))),
+    S.syncMsg ? h('div',{class:'note small'}, S.syncMsg) : null);
+}
+
+function historyTab(){
+  return h('div',{class:'stack',style:'gap:16px'},
+    syncPanel(),
+    h('h2',null,'Attempts'),
+    S.attempts.length ? h('div',{class:'panel tscroll',style:'padding:6px 8px'}, h('table',null,
+      h('thead',null,h('tr',null,h('th',null,'Test'),h('th',null,'Date'),h('th',{class:'n'},'Score'),h('th',{class:'n'},'Right'),h('th',{class:'n'},'Wrong'),h('th',{class:'n'},'Left'),h('th',{class:'n'},'Time'),h('th',null,''))),
+      h('tbody',null, S.attempts.map(a => h('tr',null, h('td',null,a.testTitle), h('td',null,dateStr(a.submittedAt)),
+        h('td',{class:'n'},`${fmt2(a.score)} / ${a.total}`), h('td',{class:'n'},a.correct), h('td',{class:'n'},a.wrong), h('td',{class:'n'},a.skipped),
+        h('td',{class:'n'},mmss(a.timeUsedMs||0)),
+        h('td',null,h('button',{class:'btn ghost',onclick:()=>openAttempt(a)},'Review')))))))
+      : h('div',{class:'empty'}, h('b',null,'No attempts yet.'), h('span',null,'Finished drills are listed here with score, time used and a full review.')));
+}
+
+/* ---------- module reader ---------- */
+function moduleView(){
+  const m = S.modules.find(x=>x.id===S.moduleId);
+  if (!m) return h('div',{class:'empty'},'This module is no longer available.', h('button',{class:'btn',onclick:back},'Back'));
+  const done = !!S.progress?.done?.[m.id];
+  const drill = m.drillId && S.tests.find(t=>t.id===m.drillId);
+  return h('div',{class:'reader'},
+    h('div',null,h('button',{class:'btn ghost',onclick:()=>{ S.view='home'; S.tab='learn'; render(); }},'← Modules')),
+    h('div',{class:'eyebrow',style:'color:var(--muted)'}, `${m.section} · ${m.topic}`),
+    h('h2',{style:'font-size:32px'}, m.title),
+    m.why ? h('div',{class:'note small'}, h('div',{class:'label'},'Why you are seeing this'), m.why) : null,
+    (m.blocks||[]).map(blockEl),
+    (m.check||[]).length ? h('div',{class:'stack'}, h('div',{class:'blk-h'},'Quick check'), m.check.map((q,i)=>quickCheck(m.id,q,i))) : null,
+    h('div',{class:'row',style:'margin-top:8px'},
+      h('button',{class:'btn '+(done?'':'primary'),onclick:()=>toggleDone(m.id)}, done?'Mark as not done':'Mark as done'),
+      drill ? h('button',{class:'btn',onclick:()=>startExam(drill)},`Take drill: ${drill.title}`) : null));
+}
+function blockEl(b){
+  switch(b.t){
+    case 'h': return h('div',{class:'blk-h'},b.text);
+    case 'formula': return h('div',{class:'blk-formula'},b.text);
+    case 'list': return h('ul',null,(b.items||[]).map(x=>h('li',null,x)));
+    case 'trap': return h('div',{class:'blk-trap'},h('div',{class:'label'},'Trap'),b.text);
+    case 'tip': return h('div',{class:'blk-tip'},h('div',{class:'label'},'Shortcut'),b.text);
+    case 'example': return h('div',{class:'blk-example'},h('div',{class:'label'},'Worked example'),h('div',{class:'qtext',style:'font-size:15px'},b.q),
+      b.steps ? h('ol',null,b.steps.map(s=>h('li',null,s))) : null, b.ans ? h('div',{style:'margin-top:6px'},h('b',null,'Answer: '),b.ans) : null);
+    default: return h('p',null,b.text);
+  }
+}
+function quickCheck(mid,q,i){
+  const key = mid+':'+i, pick = S.qc[key];
+  return h('div',{class:'revq'},
+    h('div',{class:'qtext'}, `${i+1}. ${q.q}`),
+    h('div',{class:'opts'}, q.options.map((o,j) => h('button',{class:'opt'+(pick==null?'':j===q.answer?' right':j===pick?' wrong':''),disabled:pick!=null,
+      onclick:()=>{ S.qc[key]=j; render(); }}, h('span',{class:'k'},L[j]), h('span',null,o)))),
+    pick!=null && q.explanation ? h('div',{class:'expl small'},q.explanation) : null);
+}
+async function toggleDone(id){
+  const done = { ...(S.progress?.done||{}) };
+  if (done[id]) delete done[id]; else done[id] = Date.now();
+  S.progress = { done }; render();
+  try { await S.db.doc('progress/modules').set({ done }); } catch {}
+}
+function back(){ S.view='home'; render(); }
+
+/* ---------- exam engine ---------- */
+let timer = null;
+function startExam(test){
+  if (lsGet('cbt:'+test.id)) return beginExam(test);
+  S.instr = { test, agreed:false }; S.view = 'instr'; render(); window.scrollTo(0,0);
+}
+function instrView(){
+  const {test, agreed} = S.instr; const qs = test.questions;
+  const secs = [...new Set(qs.map(q=>q.section))].map(s => [s, qs.filter(q=>q.section===s).length]);
+  const diag = test.diagnostic;
+  return h('div',{class:'reader'},
+    h('div',null,h('button',{class:'btn ghost',onclick:()=>{ S.view='home'; render(); }},'← Back')),
+    h('div',{class:'eyebrow',style:'color:var(--muted)'}, diag ? 'Diagnostic mock · counts towards your weakness profile' : 'Practice test'),
+    h('h2',{style:'font-size:32px'}, test.title),
+    h('div',{class:'panel tscroll',style:'padding:6px 8px'}, h('table',null,
+      h('thead',null,h('tr',null,h('th',null,'Section'),h('th',{class:'n'},'Questions'))),
+      h('tbody',null, secs.map(([s,c]) => h('tr',null,h('td',null,s),h('td',{class:'n'},c))),
+        h('tr',null,h('td',null,h('b',null,'Total')),h('td',{class:'n'},h('b',null,qs.length)))))),
+    h('div',{class:'blk-h'},'Instructions'),
+    h('ol',{style:'margin:0;padding-left:20px;display:grid;gap:6px'},
+      h('li',null,`You have ${test.durationMin} minutes. The timer at the top right counts down, and the test submits itself when it reaches 00:00.`),
+      h('li',null,'Each correct answer earns 1 mark. Each wrong answer loses ⅓ mark. Unanswered questions score 0.'),
+      h('li',null,'Pick an option, then click Save & Next. An option you pick but do not save is not recorded.'),
+      h('li',null,'Mark for Review & Next flags a question to revisit. If you also picked an answer, it is still evaluated.'),
+      isPyq(test)
+        ? h('li',null,'Open ', h('code',{class:'say'}, test.paperFile || 'the paper'), ' from the RRB JE CBT-1 papers folder. Read each question there and mark A, B, C or D here. Questions are mixed across sections, as RRB set them. Dropped or missing questions are greyed out and not scored.')
+        : h('li',null,'Move between sections with the tabs above the question, and between questions with the palette on the right.'),
+      h('li',null,'The timer keeps running if you leave this page. Your answers are kept on this device until you submit.'),
+      diag ? h('li',null,'Only your first attempt at this mock counts towards your diagnosis, so sit it like the real exam: no notes, no calculator, one sitting.') : null),
+    h('label',{class:'row',style:'cursor:pointer'},
+      h('input',{type:'checkbox',id:'agree',checked:agreed||null,onchange:e=>{ S.instr.agreed = e.target.checked; render(); }}),
+      'I have read the instructions and am ready to begin.'),
+    h('div',null,h('button',{class:'btn primary',disabled:!agreed,onclick:()=>beginExam(test)},'Begin test')));
+}
+function beginExam(test){
+  let st = lsGet('cbt:'+test.id);
+  if (!st) st = { testId:test.id, startedAt:Date.now(), deadline:Date.now()+test.durationMin*60000, cur:0, answers:{}, marked:{}, visited:{}, time:{} };
+  st.enteredAt = Date.now();
+  S.exam = { test, st, sel: st.answers[test.questions[st.cur].id] ?? null };
+  st.visited[test.questions[st.cur].id] = true;
+  S.view = 'exam'; S.confirm = false; persist();
+  clearInterval(timer); timer = setInterval(tickClock, 1000);
+  render(); window.scrollTo(0,0);
+  if (Date.now() >= st.deadline) submitExam(true);
+}
+function persist(){ if (S.exam) lsSet('cbt:'+S.exam.test.id, S.exam.st); }
+function logTime(){
+  const {test, st} = S.exam; const qid = test.questions[st.cur].id; const now = Date.now();
+  st.time[qid] = (st.time[qid]||0) + (now - st.enteredAt); st.enteredAt = now;
+}
+function goTo(i){
+  const {test, st} = S.exam; logTime();
+  st.cur = i; const qid = test.questions[i].id; st.visited[qid] = true;
+  S.exam.sel = st.answers[qid] ?? null; persist(); render();
+}
+function tickClock(){
+  if (!S.exam || S.view!=='exam') return;
+  const left = S.exam.st.deadline - Date.now();
+  const el = document.getElementById('clock');
+  if (el){ el.textContent = mmss(left); el.classList.toggle('low', left < 5*60000); }
+  if (left <= 0) submitExam(true);
+  else if (Math.floor(left/1000) % 5 === 0) persist();
+}
+function qStatus(q){
+  const st = S.exam.st; const a = st.answers[q.id]!=null, m = !!st.marked[q.id];
+  if (a && m) return 'am'; if (m) return 'mk'; if (a) return 'an'; if (st.visited[q.id]) return 'na'; return 'nv';
+}
+/* Previous-year papers carry no question text: the viewer reads the paper and marks A–D here. */
+const isPyq = t => t?.kind === 'pyq';
+const qText = (t, q) => !isPyq(t) ? q.q
+  : q.void === 'dropped' ? `RRB dropped Question No. ${q.n} from evaluation. It is not scored; move on.`
+  : q.void === 'missing' ? `Question No. ${q.n} is missing from the published PDF. It is not scored; move on.`
+  : `Read Question No. ${q.n} in your paper, then mark your answer.`;
+const qOpts = (t, q) => isPyq(t) ? ['', '', '', ''] : q.options;
+function examView(){
+  const {test, st, sel} = S.exam; const qs = test.questions; const q = qs[st.cur];
+  const pyq = isPyq(test);
+  const secs = pyq ? [] : [...new Set(qs.map(x=>x.section))];
+  const counts = { an:0, na:0, mk:0, am:0, nv:0 }; qs.forEach(x => counts[qStatus(x)]++);
+  const secQs = qs.map((x,i)=>[x,i]).filter(([x])=>pyq || x.section===q.section);
+  const act = (fn) => () => { fn(); };
+  const saveNext = (mark) => { const qid=q.id;
+    if (mark){ st.marked[qid]=true; } else { delete st.marked[qid]; }
+    if (S.exam.sel!=null) st.answers[qid]=S.exam.sel; else if (!mark) {}
+    persist(); if (st.cur < qs.length-1) goTo(st.cur+1); else render(); };
+  return h('div',{class:'exam'},
+    h('div',{class:'xbar'}, h('div',{class:'wrap'},
+      h('div',null, h('div',{class:'xtitle'},test.title), h('div',{class:'small',style:'opacity:.75'},`${qs.length} questions · +1 / −⅓`)),
+      h('div',{class:'row'},
+        h('button',{class:'btn'+(RW.open?' primary':''),onclick:()=>toggleRough(!RW.open),'aria-pressed':String(RW.open)},'✎ Rough work'),
+        h('span',{class:'small',style:'opacity:.75'},'Time left'), h('span',{id:'clock',class:'clock'},'--:--'),
+        h('button',{class:'btn',onclick:()=>{ S.confirm=true; render(); }},'Submit')))),
+    h('div',{class:'secs'}, h('div',{class:'wrap',role:'tablist'}, secs.map(s => h('button',{class:'sec',role:'tab','aria-selected':String(s===q.section),
+      onclick:()=>goTo(qs.findIndex(x=>x.section===s))}, s)))),
+    h('div',{class:'wrap xbody'},
+      h('section',{class:'panel'},
+        h('div',{class:'qhead'}, h('span',{class:'qno'},`Question ${st.cur+1}`), pyq ? h('span',{class:'chip'}, test.paperFile || 'Your paper') : h('span',{class:'chip'}, q.section)),
+        h('div',{class:'qtext'}, qText(test, q)),
+        h('div',{class:'opts',style:'margin-top:16px'+(pyq?';grid-template-columns:repeat(4,1fr)':''),role:'radiogroup'}, qOpts(test, q).map((o,j) => h('button',{class:'opt'+(sel===j?' sel':''),role:'radio','aria-checked':String(sel===j),
+          disabled:!!q.void, style: pyq ? 'justify-content:center;font-size:20px' : null,
+          onclick:()=>{ S.exam.sel = j; render(); }}, h('span',{class:'k',style: pyq ? 'font-size:20px;color:inherit' : null},L[j]), o ? h('span',null,o) : null))),
+        h('div',{class:'xactions'},
+          h('div',{class:'row'},
+            h('button',{class:'btn markb',onclick:()=>saveNext(true)},'Mark for Review & Next'),
+            h('button',{class:'btn',onclick:()=>{ delete st.answers[q.id]; S.exam.sel=null; persist(); render(); }},'Clear Response')),
+          h('div',{class:'row'},
+            h('button',{class:'btn',disabled:st.cur===0,onclick:()=>goTo(st.cur-1)},'Previous'),
+            h('button',{class:'btn save',onclick:()=>saveNext(false)},'Save & Next')))),
+      h('aside',{class:'panel'},
+        h('div',{class:'legend'},
+          h('span',null,h('i',{class:'sw pq an',style:'aspect-ratio:auto'}),`${counts.an} Answered`),
+          h('span',null,h('i',{class:'sw pq na',style:'aspect-ratio:auto'}),`${counts.na} Not answered`),
+          h('span',null,h('i',{class:'sw pq nv',style:'aspect-ratio:auto'}),`${counts.nv} Not visited`),
+          h('span',null,h('i',{class:'sw pq mk',style:'aspect-ratio:auto'}),`${counts.mk} Marked`),
+          h('span',{style:'grid-column:1/-1'},h('i',{class:'sw pq am',style:'aspect-ratio:auto'}),`${counts.am} Answered & marked (evaluated)`)),
+        h('div',{class:'label'}, pyq ? 'All questions (mixed sections, as in the paper)' : q.section),
+        h('div',{class:'pal'}, secQs.map(([x,i]) => h('button',{class:'pq '+qStatus(x)+(i===st.cur?' cur':''),'aria-label':`Question ${i+1}`,onclick:()=>goTo(i)}, i+1))),
+        h('button',{class:'btn primary',style:'width:100%;margin-top:16px',onclick:()=>{ S.confirm=true; render(); }},'Submit test'))),
+    S.confirm ? confirmDialog(counts) : null);
+}
+function confirmDialog(c){
+  return h('div',{class:'overlay',onclick:e=>{ if(e.target===e.currentTarget){ S.confirm=false; render(); } }},
+    h('div',{class:'dialog',role:'dialog','aria-modal':'true'},
+      h('h3',null,'Submit this test?'),
+      h('table',null,h('tbody',null,
+        h('tr',null,h('td',null,'Answered'),h('td',{class:'n'},c.an+c.am)),
+        h('tr',null,h('td',null,'Marked for review (unanswered)'),h('td',{class:'n'},c.mk)),
+        h('tr',null,h('td',null,'Not answered'),h('td',{class:'n'},c.na)),
+        h('tr',null,h('td',null,'Not visited'),h('td',{class:'n'},c.nv)))),
+      h('p',{class:'small muted',style:'margin:0'},'Time keeps running until you submit.'),
+      h('div',{class:'row',style:'justify-content:flex-end'},
+        h('button',{class:'btn',onclick:()=>{ S.confirm=false; render(); }},'Keep working'),
+        h('button',{class:'btn primary',onclick:()=>submitExam(false)},'Submit'))));
+}
+async function submitExam(auto){
+  if (!S.exam || S.exam.submitting) return;
+  S.exam.submitting = true; clearInterval(timer); logTime();
+  const {test, st} = S.exam; const qs = test.questions.filter(q => !q.void);
+  let correct=0, wrong=0, skipped=0; const perSection={}, perTopic={};
+  const responses = qs.map(q => {
+    const chosen = st.answers[q.id] ?? null;
+    const sec = perSection[q.section] ||= {total:0,correct:0,wrong:0,skipped:0};
+    const tp = perTopic[q.topic] ||= {section:q.section,total:0,correct:0,wrong:0,skipped:0,ms:0};
+    sec.total++; tp.total++; tp.ms += Math.round(st.time[q.id]||0);
+    if (chosen==null){ skipped++; sec.skipped++; tp.skipped++; } else if (chosen===q.answer){ correct++; sec.correct++; tp.correct++; } else { wrong++; sec.wrong++; tp.wrong++; }
+    return { qid:q.id, section:q.section, topic:q.topic, chosen, correct:q.answer, ms:Math.round(st.time[q.id]||0), marked:!!st.marked[q.id] };
+  });
+  const attempt = { testId:test.id, testTitle:test.title, startedAt:st.startedAt, submittedAt:Date.now(), autoSubmitted:!!auto,
+    timeUsedMs: Math.min(Date.now(), st.deadline) - st.startedAt, durationMin:test.durationMin,
+    total:qs.length, correct, wrong, skipped, score: Math.round((correct - wrong/3)*100)/100, perSection, perTopic, responses };
+  lsDel('cbt:'+test.id); lsDel('rough:'+test.id); RW.testId = null; RW.sheets = {};
+  S.exam = null; S.attemptView = attempt; S.revFilter = 'wrong'; S.view = 'result'; S.saveErr = null;
+  render(); window.scrollTo(0,0);
+  await saveAttempt(attempt);
+}
+async function saveAttempt(a){
+  try { await S.db.collection('attempts').add(a); S.saveErr = null; lsDel('cbt:pending'); }
+  catch(e){ S.saveErr = a; lsSet('cbt:pending', a); }
+  if (S.view==='result') render();
+}
+function openAttempt(a){ S.attemptView = a; S.revFilter='wrong'; S.view='result'; render(); window.scrollTo(0,0); }
+
+/* ---------- result ---------- */
+function resultView(){
+  const a = S.attemptView; const test = S.tests.find(t=>t.id===a.testId);
+  const qById = Object.fromEntries((test?.questions||[]).map(q=>[q.id,q]));
+  const topics = Object.entries(a.perTopic||{}).map(([k,v])=>({topic:k,...v})).sort((x,y)=>pct(x.correct,x.total)-pct(y.correct,y.total));
+  const filt = a.responses.filter(r => S.revFilter==='all' ? true : S.revFilter==='wrong' ? (r.chosen!=null && r.chosen!==r.correct) : r.chosen==null);
+  return h('div',{class:'stack',style:'gap:20px'},
+    h('div',null,h('button',{class:'btn ghost',onclick:()=>{ S.view='home'; S.tab='history'; render(); }},'← Attempts')),
+    S.saveErr ? h('div',{class:'note spread'}, h('span',null,'This result has not been saved yet, so Claude cannot see it.'), h('button',{class:'btn',onclick:()=>saveAttempt(S.saveErr)},'Try saving again')) : null,
+    h('section',{class:'panel stack'},
+      h('div',{class:'eyebrow',style:'color:var(--muted)'}, a.testTitle + (a.autoSubmitted?' · auto-submitted at time-up':'')),
+      h('div',{class:'kpis'},
+        h('div',{class:'kpi'},h('div',{class:'label'},'Score'),h('div',{class:'scorebig'},fmt2(a.score),h('span',{class:'muted',style:'font-size:20px'},` / ${a.total}`))),
+        h('div',{class:'kpi'},h('div',{class:'label'},'Right'),h('div',{class:'scorebig',style:'color:var(--ok)'},a.correct)),
+        h('div',{class:'kpi'},h('div',{class:'label'},'Wrong'),h('div',{class:'scorebig',style:'color:var(--bad)'},a.wrong)),
+        h('div',{class:'kpi'},h('div',{class:'label'},'Left'),h('div',{class:'scorebig muted'},a.skipped)),
+        h('div',{class:'kpi'},h('div',{class:'label'},'Time used'),h('div',{class:'scorebig'},mmss(a.timeUsedMs)))),
+      h('p',{class:'small muted',style:'margin:0'}, `Negative marking cost you ${fmt2(a.wrong/3)} marks. Accuracy on attempted questions: ${pct(a.correct,a.correct+a.wrong)}%.`)),
+    h('section',{class:'panel tscroll',style:'padding:6px 8px'}, h('table',null,
+      h('thead',null,h('tr',null,h('th',null,'Topic'),h('th',{class:'n'},'Right'),h('th',{class:'n'},'Wrong'),h('th',{class:'n'},'Left'),h('th',null,'Accuracy'),h('th',{class:'n'},'Avg time'))),
+      h('tbody',null, topics.map(t => { const ac = pct(t.correct,t.total); return h('tr',null,
+        h('td',null,h('div',null,t.topic),h('div',{class:'muted small'},short(t.section))),
+        h('td',{class:'n'},t.correct),h('td',{class:'n'},t.wrong),h('td',{class:'n'},t.skipped),
+        h('td',{class:'num',style:'white-space:nowrap'},h('span',{class:'bar'},h('i',{style:`width:${ac}%;background:${accColor(ac)}`})),ac+'%'),
+        h('td',{class:'n'},Math.round(t.ms/t.total/1000)+'s')); })))),
+    h('section',{class:'stack'},
+      h('div',{class:'spread'}, h('h2',null,'Review'),
+        h('div',{class:'row'}, [['wrong','Wrong'],['skipped','Left'],['all','All']].map(([k,t]) => h('button',{class:'btn'+(S.revFilter===k?' primary':''),onclick:()=>{ S.revFilter=k; render(); }},t)))),
+      !test ? h('p',{class:'muted'},'The questions for this test are no longer stored.') :
+      filt.length ? h('div',{class:'rev'}, filt.map(r => { const q = qById[r.qid]; if (!q) return null; const n = q.n || a.responses.indexOf(r)+1;
+        return h('div',{class:'revq'},
+          h('div',{class:'spread'}, h('b',null,`Q${n}`), h('span',{class:'row'}, h('span',{class:'chip'},q.topic), h('span',{class:'num muted small'},Math.round(r.ms/1000)+'s'))),
+          h('div',{class:'qtext'}, isPyq(test) ? `Question No. ${q.n} in ${test.paperFile || 'the paper'}` : q.q),
+          h('div',{class:'opts',style:isPyq(test)?'grid-template-columns:repeat(4,1fr)':null}, qOpts(test, q).map((o,j)=>h('div',{class:'opt'+(j===q.answer?' right':j===r.chosen?' wrong':'')},h('span',{class:'k'},L[j]),h('span',null,o,
+            j===r.chosen ? h('span',{class:'muted small'}, isPyq(test) ? ' you' : '  · your answer') : null)))),
+          q.explanation ? h('div',{class:'expl small'},q.explanation) : null); }))
+        : h('p',{class:'muted'}, S.revFilter==='wrong' ? 'No wrong answers in this attempt.' : 'Nothing here.')));
+}
+
+const pending = lsGet('cbt:pending');
+boot().then(() => { if (pending && S.db) saveAttempt(pending); });
+</script>
+
+<script>if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
+</body></html>
